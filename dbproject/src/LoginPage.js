@@ -8,33 +8,46 @@ import {useNavigate} from "react-router-dom";
 export default function LoginPage() {
     const [isVisible, setIsVisible] = useState(false);
     const [login, setLogin] = useState("");
-    const [password, setPassword] = useState("")
+    const [password, setPassword] = useState("");
     const navigate = useNavigate();
 
+    const handleError = (error) => {
+        if (error.response) {
+            const { message, errorCode, details } = error.response.data;
+            console.error(`Error: ${message} (Code: ${errorCode}) - ${details}`);
+        } else {
+            console.error("An unexpected error occurred:", error);
+        }
+    };
+
     const loginFun = () => {
-        axios.post('http://localhost:8080/api/user/login',
-            {username : login, password: password})
+        const inputDTO = {
+            username: login,
+            password: password
+        };
+
+        axios.post('http://localhost:8080/auth', inputDTO)
             .then(response => {
-                navigate("/main", { state : {user : {username: login, userId: response.data.userId}}})
+                const user = response.data;
+                navigate("/main", { state: { user: { userId: user.id, username: user.username, email: user.email } } });
             })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    }
+            .catch(handleError);
+    };
 
     const toggleVisibility = () => setIsVisible(!isVisible);
+
     return (
         <div className="flex justify-center items-start p-6">
             <Card className="max-w-[400px] min-w-[400px]">
                 <CardBody>
                     <Input
                         isRequired
-                        type="login"
+                        type="text"
                         label="Login"
                         defaultValue=""
                         onValueChange={setLogin}
                     />
-                    <Spacer y={5}/>
+                    <Spacer y={5} />
                     <Input
                         label="Password"
                         isRequired
@@ -51,11 +64,11 @@ export default function LoginPage() {
                         onValueChange={setPassword}
                     />
                 </CardBody>
-                <Divider/>
+                <Divider />
                 <CardFooter className="justify-center">
                     <div className="flex">
                         <Button onClick={loginFun} variant="flat">Login</Button>
-                        <Spacer x={20}/>
+                        <Spacer x={20} />
                         <Button as={Link} color="primary" href="/signuppage" variant="flat">
                             Sign Up
                         </Button>
@@ -63,5 +76,5 @@ export default function LoginPage() {
                 </CardFooter>
             </Card>
         </div>
-    )
+    );
 }

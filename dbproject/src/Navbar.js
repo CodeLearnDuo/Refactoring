@@ -3,28 +3,34 @@ import {
     Link,
     NavbarContent,
     NavbarItem,
-    Button, User
+    Button,
+    User
 } from "@nextui-org/react";
 import {useNavigate} from "react-router-dom";
 
 function auth(user, navigate) {
+    const handleLogout = () => {
+        navigate("/main", { state: { user: null } });
+    };
+
     if (user) {
         return (
             <NavbarContent justify="end">
                 <NavbarItem className="hidden lg:flex">
                     <User
-                        style={{cursor: "pointer"}}
+                        style={{ cursor: "pointer" }}
                         name={user.username}
-                        onClick={() => navigate("/hero", { state : {user : user}})}
+                        description={user.email}
+                        onClick={() => navigate("/hero", { state: { user: user } })}
                     />
                 </NavbarItem>
                 <NavbarItem>
-                    <Button onClick={() => navigate("/main", { state : {user : null}})} color="primary" variant="flat">
+                    <Button onClick={handleLogout} color="primary" variant="flat">
                         Logout
                     </Button>
                 </NavbarItem>
             </NavbarContent>
-        )
+        );
     } else {
         return (
             <NavbarContent justify="end">
@@ -37,7 +43,7 @@ function auth(user, navigate) {
                     </Button>
                 </NavbarItem>
             </NavbarContent>
-        )
+        );
     }
 }
 

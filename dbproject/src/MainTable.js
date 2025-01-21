@@ -18,39 +18,52 @@ const columns = [
     {name: "Due date", uid: "dueDate"},
     {name: "Status", uid: "status"},
     {name: "XP", uid: "xp"},
-    {name: "Type", uid: "typeId"},
+    {name: "Type", uid: "type.description"},
 ];
 
-function setCompleted(quest, user) {
-    axios.get(`http://localhost:8080/api/hero/${user}`)
-        .then(response => {
-            axios.post("http://localhost:8080/api/billboard",
-                {
-                    heroId: response.data.heroId,
-                    questId: quest
-                })
-                .then(() => window.location.reload())
-                .catch(error => {console.error('Error: ', error)})
-        })
+function setCompleted(questId, userId) {
+    const inputDTO = {
+        hero: { id: userId },
+        quest: { id: questId },
+        result: true,
+        at: new Date().toISOString()
+    };
 
+    axios.post(`http://localhost:8080/billboards`, inputDTO)
+        .then(() => window.location.reload())
+        .catch(error => {
+            if (error.response) {
+                const { message, errorCode, details } = error.response.data;
+                console.error(`Error: ${message} (Code: ${errorCode}) - ${details}`);
+            } else {
+                console.error("An unexpected error occurred:", error);
+            }
+        });
 }
 
-export default function MainTable({  user }) {
+export default function MainTable({ user }) {
     const [quests, setQuests] = useState([]);
     const navigate = useNavigate();
 
+    const handleError = (error) => {
+        if (error.response) {
+            const { message, errorCode, details } = error.response.data;
+            console.error(`Error: ${message} (Code: ${errorCode}) - ${details}`);
+        } else {
+            console.error("An unexpected error occurred:", error);
+        }
+    };
+
     useEffect(() => {
-        axios.get(`http://localhost:8080/api/quest/all`)
+        axios.get(`http://localhost:8080/quests`)
             .then(response => {
                 setQuests(response.data);
             })
-            .catch(error => {
-                console.error('Error fetching transformers:', error);
-            });
+            .catch(handleError);
     }, []);
 
     const renderCell = useCallback((quest, columnKey) => {
-        const cellValue = quest[columnKey];
+        const cellValue = columnKey.split('.').reduce((obj, key) => obj[key], quest);
 
         switch (columnKey) {
             case "status":
@@ -59,28 +72,33 @@ export default function MainTable({  user }) {
                         <Chip className="capitalize" color={"success"} size="sm" variant="flat">
                             {cellValue}
                         </Chip>
-                    )
+                    );
                 }
                 return (
-                    <Chip style={{cursor: "pointer"}} onClick={() => setCompleted(quest.questId, user.userId)} className="capitalize" color={"warning"} size="sm" variant="flat">
+                    <Chip
+                        style={{ cursor: "pointer" }}
+                        onClick={() => setCompleted(quest.id, user.userId)}
+                        className="capitalize"
+                        color={"warning"}
+                        size="sm"
+                        variant="flat"
+                    >
                         {cellValue}
                     </Chip>
                 );
             case "title":
                 return (
-                    <Button onClick={() => navigate("/comments", { state : {user : user, quest: quest["questId"]}})}>
+                    <Button onClick={() => navigate("/comments", { state: { user: user, quest: quest } })}>
                         {cellValue}
                     </Button>
                 );
             default:
-                return (
-                    cellValue
-                );
+                return cellValue;
         }
     }, [user, navigate]);
 
     return (
-        <Table area-label="Quests">
+        <Table aria-label="Quests">
             <TableHeader columns={columns}>
                 {(column) => (
                     <TableColumn key={column.uid} align={"center"}>
@@ -96,5 +114,5 @@ export default function MainTable({  user }) {
                 )}
             </TableBody>
         </Table>
-    )
+    );
 }

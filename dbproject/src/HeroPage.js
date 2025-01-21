@@ -4,42 +4,51 @@ import {Button, Card, CardBody, CardHeader, Divider} from "@nextui-org/react";
 import {useLocation, useNavigate} from "react-router-dom";
 import NavBar from "./Navbar";
 
-
-function TypeCard() {
+function HeroPage() {
     const [hero, setHero] = useState(null);
     let {user} = useLocation().state;
-    useEffect(() => {
-        if (user) {
-            axios.get(`http://localhost:8080/api/hero/${user.userId}`)
-                .then(response => {
-                    setHero(response.data)
-                })
-                .catch(error => {
-                    console.error(`Error fetching hero details for ID ${user.userId}:`, error);
-                    navigate("/createhero", { state : {user : user}})
-                });
-        }
-    }, [user]);
-
     const navigate = useNavigate();
 
-    const deleteHero = () => {
-        axios.delete(`http://localhost:8080/api/hero/${user.userId}`)
-            .then(() => {
-                setHero(null)
-                navigate("/createhero", { state : {user : user}})
-            }).catch(error => {
-                console.log(error)
-        })
+    const handleError = (error) => {
+        if (error.response) {
+            const { message, errorCode, details } = error.response.data;
+            console.error(`Error: ${message} (Code: ${errorCode}) - ${details}`);
+        } else {
+            console.error("An unexpected error occurred:", error);
+        }
     };
 
+    useEffect(() => {
+        if (user) {
+            axios.get(`http://localhost:8080/heroes/${user.userId}`)
+                .then(response => {
+                    setHero(response.data);
+                })
+                .catch(error => {
+                    handleError(error);
+                    navigate("/createhero", {state: {user: user}});
+                });
+        }
+    }, [user, navigate]);
+
+    const deleteHero = () => {
+        axios.delete(`http://localhost:8080/heroes/${hero.id}`)
+            .then(() => {
+                setHero(null);
+                navigate("/createhero", {state: {user: user}});
+            })
+            .catch(error => {
+                handleError(error);
+            });
+    };
 
     if (!hero) {
-        return <div>Loading...</div>
+        return <div>Loading...</div>;
     }
+
     return (
         <div>
-            <NavBar user={user}/>
+            <NavBar user={user} />
             <div className="flex justify-center items-start p-6">
                 <Card className="max-w-[400px] min-w-[400px]">
                     <CardHeader className="flex gap-3">
@@ -48,15 +57,14 @@ function TypeCard() {
                             <p className="text-small text-default-500">{hero.name}</p>
                         </div>
                     </CardHeader>
-                    <Divider/>
+                    <Divider />
                     <CardBody>
                         <p>Age: {hero.age}</p>
                         <p>HP: {hero.currentHp}</p>
-                        <p>Level: {hero.levelId}</p>
-                        <p>Class: {hero.heroClassId}</p>
+                        <p>Level: {hero.level.value}</p>
+                        <p>Class: {hero.clazz.className}</p>
                         <p>XP: {hero.xp}</p>
-                        <p><Button size="sm" onClick={() => deleteHero()}>Удалить</Button>
-                        </p>
+                        <Button size="sm" onClick={deleteHero}>Delete</Button>
                     </CardBody>
                 </Card>
             </div>
@@ -64,5 +72,4 @@ function TypeCard() {
     );
 }
 
-
-export default TypeCard;
+export default HeroPage;

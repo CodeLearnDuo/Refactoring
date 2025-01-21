@@ -8,43 +8,56 @@ import {useNavigate} from "react-router-dom";
 export default function RegisterPage() {
     const [isVisible, setIsVisible] = useState(false);
     const [login, setLogin] = useState("");
-    const [password, setPassword] = useState("")
-    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("");
+    const [email, setEmail] = useState("");
     const navigate = useNavigate();
 
-    const loginFun = () => {
-        axios.post('http://localhost:8080/api/user/register',
-            {username : login, password: password, email: email})
+    const handleError = (error) => {
+        if (error.response) {
+            const { message, errorCode, details } = error.response.data;
+            console.error(`Error: ${message} (Code: ${errorCode}) - ${details}`);
+        } else {
+            console.error("An unexpected error occurred:", error);
+        }
+    };
+
+    const registerFun = () => {
+        const inputDTO = {
+            username: login,
+            password: password,
+            email: email
+        };
+
+        axios.post('http://localhost:8080/auth/reg', inputDTO)
             .then(response => {
-                console.log(response)
-                navigate("/main", { state : {user : {username: login, userId: response.data.userId}}})
+                const user = response.data;
+                navigate("/main", { state: { user: { userId: user.id, username: user.username, email: user.email } } });
             })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    }
+            .catch(handleError);
+    };
 
     const toggleVisibility = () => setIsVisible(!isVisible);
+
     return (
         <div className="flex justify-center items-start p-6">
             <Card className="max-w-[400px] min-w-[400px]">
                 <CardBody>
                     <Input
                         isRequired
-                        type="login"
+                        type="text"
                         label="Login"
                         defaultValue=""
                         onValueChange={setLogin}
                     />
-                    <Spacer y={5}/>
+                    <Spacer y={5} />
                     <Input
                         isRequired
-                        type="login"
+                        type="email"
                         label="Email"
                         defaultValue=""
                         onValueChange={setEmail}
                     />
-                    <Spacer y={5}/>
+                    <Spacer y={5} />
                     <Input
                         label="Password"
                         isRequired
@@ -60,13 +73,13 @@ export default function RegisterPage() {
                         type={isVisible ? "text" : "password"}
                         onValueChange={setPassword}
                     />
-                    <Spacer y={5}/>
+                    <Spacer y={5} />
                 </CardBody>
-                <Divider/>
+                <Divider />
                 <CardFooter className="justify-center">
                     <div className="flex">
-                        <Button onClick={loginFun} variant="flat">Sign Up</Button>
-                        <Spacer x={20}/>
+                        <Button onClick={registerFun} variant="flat">Sign Up</Button>
+                        <Spacer x={20} />
                         <Button as={Link} color="primary" href="/loginpage" variant="flat">
                             Login
                         </Button>
@@ -74,5 +87,5 @@ export default function RegisterPage() {
                 </CardFooter>
             </Card>
         </div>
-    )
+    );
 }
